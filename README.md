@@ -5,7 +5,7 @@
 
 This project is a Flask-based Trail Management System developed for the COMP2001 coursework. 
 It allows users to manage trails, features, and user authentication with role-based permissions. 
-The application is Dockerized for deployment and integrates with a Microsoft SQL Server database.
+The application uses Docker for deployment and integrates with a Microsoft SQL Server database.
 
 ## Features
 
@@ -23,40 +23,46 @@ The application is Dockerized for deployment and integrates with a Microsoft SQL
 ├── config.py             # Configuration for the application, including database setup.
 ├── databasebuild.py      # Script to build and populate the database with sample data.
 ├── features.py           # API endpoints and logic for managing features.
-├── models.py             # ORM models for users, trails, features, and their relationships.
+├── models.py             # ORM models for users, trails, features, and relationships.
 ├── permissions.py        # Role-based permission handling.
 ├── requirements.txt      # Python dependencies for the application.
 ├── swagger.yml           # API documentation using the OpenAPI specification.
 ├── trails.py             # API endpoints and logic for managing trails.
-└── Dockerfile            # Docker configuration for building and running the application.
+└── Dockerfile            # Docker configuration is used to build and run the application.
 ```
 
 ## Prerequisites
 
 - Python 3.9 or above.
-- Docker Desktop (for containerization).
+- Docker Desktop (for containerisation).
 - Microsoft SQL Server (remote or local).
 
 ## Installation
 
-### Local Development
+### Local Development with Anaconda
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/YourUsername/YourRepoName.git
-    cd YourRepoName
+
+    git clone https://github.com/BLJThompson/Comp2001BenThompson_Micro-service_API.git
+    cd Comp2001BenThompson_Micro-service_API
+	
     ```
 
-2. Create a virtual environment and install dependencies:
+2. Create a new Anaconda environment and install dependencies:
     ```bash
-    python -m venv venv
-    venv\Scripts\activate  # On Windows
+	
+    conda create --name comp2001_app python=3.9
+    conda activate comp2001_app
     pip install -r requirements.txt
+	
     ```
 
 3. Run the Flask application:
     ```bash
+	
     python app.py
+	
     ```
 
 4. Access the application at `http://localhost:8000`.
@@ -65,12 +71,16 @@ The application is Dockerized for deployment and integrates with a Microsoft SQL
 
 1. Build the Docker image:
     ```bash
+	
     docker build -t comp2001_app .
+	
     ```
 
 2. Run the Docker container:
     ```bash
+	
     docker run -p 8000:8000 comp2001_app
+	
     ```
 
 3. Access the application at `http://localhost:8000`.
@@ -79,22 +89,26 @@ The application is Dockerized for deployment and integrates with a Microsoft SQL
 
 Alternatively, pull the pre-built Docker image from Docker Hub:
 ```bash
+
 docker pull benthompson411/comp2001_app
 docker run -p 8000:8000 benthompson411/comp2001_app
+
 ```
 
 ## API Documentation
 
 The API is documented using OpenAPI (Swagger). Once the application is running, access the documentation at:
 ```
+
 http://localhost:8000/api/ui
+
 ```
 
 ## Database
 
 The application uses Microsoft SQL Server as the backend. The database connection is configured in `config.py`.
 
-Sample data is populated via the `databasebuild.py` script. Run this script to initialize the database with users, trails, and features.
+The `databasebuild.py` script populates sample data. Run this script to initialise the database with users, trails, and features.
 
 ## Authors
 
@@ -102,7 +116,7 @@ Sample data is populated via the `databasebuild.py` script. Run this script to i
 
 ## Repository Link
 
-[GitHub Repository]https://github.com/BLJThompson/Comp2001BenThompson_Micro-service_API
+[GitHub Repository](https://github.com/BLJThompson/Comp2001BenThompson_Micro-service_API)
 
 ## Docker Image
 

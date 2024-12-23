@@ -1,0 +1,711 @@
+openapi: 3.0.0
+info:
+  title: "Trail Management API"
+  description: "API for user authentication, trail management, and feature management"
+  version: "1.0.0"
+
+servers:
+  - url: "/api"
+
+paths:
+  #################### Authentication Endpoints ####################
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: "Log in a user"
+      description: "Authenticate the user using their email and password."
+      operationId: auth.login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+      responses:
+        "200":
+          description: "Login successful"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login successful"
+                  user:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+                        example: 1
+                      email:
+                        type: string
+                        example: user@example.com
+        "401":
+          description: "Invalid credentials"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: "Log out a user"
+      description: "Log out the user and end their session using the email provided in the headers."
+      operationId: auth.logout
+      parameters:
+        - name: email
+          in: header
+          required: true
+          schema:
+            type: string
+            format: email
+            example: grace@plymouth.ac.uk
+            description: The email of the user to log out.
+      responses:
+        "200":
+          description: "Logout successful"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User grace@plymouth.ac.uk logged out successfully."
+        "400":
+          description: "Missing email in headers"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Missing email in headers."
+        "404":
+          description: "No active session found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  #################### Trail Endpoints ####################
+  /trails:
+    get:
+      tags:
+        - Trails
+      summary: "Retrieve all trails"
+      description: "Fetch a list of all trails from the database."
+      operationId: trails.read_all
+      responses:
+        "200":
+          description: "List of trails retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrailWithFeatures"
+        "500":
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags:
+        - Trails
+      summary: "Create a new trail"
+      description: "Create a trail linked to a user and optionally add features to it."
+      operationId: trails.create_trail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrailWithFeatures"
+      responses:
+        "201":
+          description: "Trail created successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrailWithFeatures"
+        "400":
+          description: "Validation error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /trails/{trail_id}:
+    get:
+      tags:
+        - Trails
+      summary: Retrieve a trail by ID
+      description: >
+        Fetch a specific trail by its ID. This endpoint requires the user to be authenticated 
+        with a valid session. Role-based access control ensures only authorized roles can access this endpoint.
+      operationId: trails.read_by_id
+      parameters:
+        - name: trail_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+            description: The ID of the trail to retrieve.
+      responses:
+        "200":
+          description: Trail retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trail_name:
+                    type: string
+                    example: "Ocean View Trail"
+                  difficulty:
+                    type: string
+                    example: "Easy"
+                  location:
+                    type: string
+                    example: "Cornwall, UK"
+                  length:
+                    type: number
+                    example: 5.5
+                  elevation_gain:
+                    type: number
+                    example: 150
+        "403":
+          description: Forbidden. User lacks permission to access this endpoint.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Forbidden. You do not have permission to access this resource."
+        "401":
+          description: Unauthorized. User is not logged in.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User is not logged in."
+        "404":
+          description: Trail not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Trail not found."
+
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags:
+        - Trails
+      summary: "Update a trail by ID"
+      description: "Update an existing trail's details using its ID."
+      operationId: trails.update_trail
+      parameters:
+        - name: trail_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        description: "Fields to update for the trail"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Trail"
+      responses:
+        "200":
+          description: "Trail updated successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trail"
+        "404":
+          description: "Trail not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - Trails
+      summary: "Delete a trail"
+      description: "Delete a trail by its ID and remove its links to features."
+      operationId: trails.delete_trail
+      parameters:
+        - name: trail_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "200":
+          description: "Trail deleted successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Trail deleted successfully."
+        "404":
+          description: "Trail not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /trails/{trail_id}/features:
+    post:
+      tags:
+        - Trails
+      summary: "Add a feature to a trail"
+      description: "Add a feature to a trail. If the feature does not exist, it will be created."
+      operationId: trails.add_feature_to_trail
+      parameters:
+        - name: trail_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feature_name:
+                  type: string
+                  example: "Waterfall"
+      responses:
+        "201":
+          description: "Feature added successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Feature added successfully."
+        "500":
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags:
+        - Trails
+      summary: "Remove a feature from a trail"
+      description: "Remove a feature from a trail by deleting the association in the TrailFeature table."
+      operationId: trails.remove_feature_from_trail
+      parameters:
+        - name: trail_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feature_name:
+                  type: string
+                  example: "Waterfall"
+      responses:
+        "200":
+          description: "Feature successfully removed from the trail."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Feature 'Waterfall' successfully removed from trail ID 1."
+        "400":
+          description: "Validation error or feature not linked to trail."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: "Trail or feature not found."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: "Internal server error."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  #################### Feature Endpoints ####################
+
+  /features:
+    get:
+      summary: Get All Features
+      description: Fetch all features from the database and return them as a JSON response.
+      operationId: features.read_all_features
+      tags:
+        - Features
+      responses:
+        '200':
+          description: A list of features.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Feature'
+        '500':
+          description: An error occurred on the server.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Add a New Feature
+      description: Add a new feature to the database.
+      operationId: features.add_feature
+      tags:
+        - Features
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feature_name:
+                  type: string
+                  example: "Add new Feature"
+      responses:
+        '201':
+          description: Feature successfully added.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Feature 'Waterfall' successfully added."
+                  feature:
+                    type: object
+                    properties:
+                      feature_name:
+                        type: string
+                        example: "Waterfall"
+        '400':
+          description: Validation error or feature already exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /features/search:
+    get:
+      summary: Search Feature by Name
+      description: Search for a feature by its name and return all trails associated with it.
+      operationId: features.search_feature_by_name
+      tags:
+        - Features      
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trails associated with the feature.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrailWithFeatures"
+        '400':
+          description: Missing or invalid query parameter.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '404':
+          description: Feature not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /features/{current_feature_name}:
+    put:
+      summary: Update Feature by Name
+      description: Update the name of an existing feature by searching for the current feature name.
+      operationId: features.update_feature_by_name
+      tags:
+        - Features
+      parameters:
+        - name: current_feature_name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "Waterfall"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_feature_name:
+                  type: string
+                  description: "The updated name for the feature."
+                  example: "Scenic Waterfall"
+      responses:
+        "200":
+          description: Feature name successfully updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Feature name successfully updated from 'Waterfall' to 'Scenic Waterfall'."
+                  feature:
+                    type: object
+                    properties:
+                      feature_name:
+                        type: string
+                        example: "Scenic Waterfall"
+        "400":
+          description: Validation error or duplicate name.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Feature not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"              
+  /features/{feature_name}:
+    delete:
+      summary: Delete Feature by Name
+      description: Delete a feature from the database if it is not associated with any trail.
+      operationId: features.delete_feature
+      tags:
+        - Features 
+      parameters:
+        - name: feature_name
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "Waterfall"
+      responses:
+        '200':
+          description: Feature successfully deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Feature 'Waterfall' successfully deleted."
+        '400':
+          description: Feature is associated with trails and cannot be deleted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '404':
+          description: Feature not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+#################### Component Schemas ####################
+components:
+  schemas:
+    Trail:
+      type: object
+      properties:
+        trail_name:
+          type: string
+          example: "Ocean View Trail"
+        trail_summary:
+          type: string
+          example: "A beautiful trail with ocean views."
+        trail_description:
+          type: string
+          example: "This trail is known for its scenic ocean views and gentle terrain."
+        difficulty:
+          type: string
+          example: "Easy"
+        location:
+          type: string
+          example: "Cornwall, UK"
+        length:
+          type: number
+          format: float
+          example: 5.5
+        elevation_gain:
+          type: number
+          format: float
+          example: 150
+        route_type:
+          type: string
+          example: "Loop"
+        waypoints:
+          type: object
+          properties:
+            pt1:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                  example: 50.1234
+                long:
+                  type: number
+                  format: float
+                  example: -5.6789
+                desc:
+                  type: string
+                  example: "Start of the trail"
+            pt2:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                  example: 50.1240
+                long:
+                  type: number
+                  format: float
+                  example: -5.6795
+                desc:
+                  type: string
+                  example: "Viewpoint overlooking the ocean"
+            pt3:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                  example: 50.1250
+                long:
+                  type: number
+                  format: float
+                  example: -5.6800
+                desc:
+                  type: string
+                  example: "End of the loop"
+    Feature:
+      type: object
+      properties:
+        feature_name:
+          type: string
+          example: "Waterfall"
+          
+    TrailWithFeatures:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/Trail"
+        - type: object
+          properties:
+            features:
+              type: array
+              items:
+                $ref: "#/components/schemas/Feature"
+                
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "An error occurred."

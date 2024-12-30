@@ -73,15 +73,14 @@ FEATURES = [
 
 # Sample trail-feature relationships
 TRAIL_FEATURES = [
-    {"trail_id": 1, "feature_id": 1},  # Ocean View Trail has Waterfall
-    {"trail_id": 1, "feature_id": 2},  # Ocean View Trail has Viewpoint
-    {"trail_id": 2, "feature_id": 2},  # Mountain Adventure Trail has Viewpoint
-    {"trail_id": 2, "feature_id": 3}   # Mountain Adventure Trail has Historic Landmark
+    {"trail_id": 1, "feature_id": 1},
+    {"trail_id": 1, "feature_id": 2},
+    {"trail_id": 2, "feature_id": 2},
+    {"trail_id": 2, "feature_id": 3}
 ]
 
 # Build the database and insert data
 with app.app_context():
-    # Drop all existing tables and recreate them
     db.drop_all()
     db.create_all()
 

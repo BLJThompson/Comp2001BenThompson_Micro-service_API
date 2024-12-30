@@ -1,0 +1,17 @@
+cd comp2001_flask_report
+
+conda activate flask_report
+conda deactivate
+taskkill /f /im python.exe
+python app.py
+echo. > app.py
+
+{
+  "email": "grace@plymouth.ac.uk",
+  "password": "GskE483+"
+}
+
+{
+  "email": "tim@plymouth.ac.uk",
+  "password": "COMP2001!"
+}

@@ -11,17 +11,15 @@ AUTH_URL = "https://web.socem.plymouth.ac.uk/COMP2001/auth/api/users"
 
 
 
-
+# Authenticate user and store their session using a custom session ID
 @app.route('/login', methods=['POST'])
 def login():
-    """
-    Authenticate user and store their session using a custom session ID.
-    """
+
     credentials = request.json
     response = requests.post(AUTH_URL, json=credentials)
 
     if response.status_code == 200:
-        user_data = response.json()  # Parse the response
+        user_data = response.json()
         email = credentials["email"]
 
         # Query the local database for user details
@@ -50,18 +48,11 @@ def login():
 
     return jsonify({"error": "Invalid credentials"}), 401
 
-
-
-
-
-
-
-
+# Log out a user by clearing their session
 @app.route('/logout', methods=['POST'])
 def logout():
-    """
-    Log out a user by clearing their session.
-    """
+
+    # Get session_id
     session_id = request.cookies.get("session_id")
     if not session_id:
         return jsonify({"error": "Missing session ID."}), 400
@@ -85,16 +76,10 @@ def logout():
 
     return resp, 200
 
-
-
-
-
-
+# Check if a user is authenticated
 @app.route('/auth-status', methods=['GET'])
 def auth_status():
-    """
-    Check if a user is authenticated.
-    """
+
     email = request.args.get("email")
     if email in logged_in_users:
         user_details = logged_in_users[email]

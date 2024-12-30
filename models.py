@@ -14,14 +14,15 @@ class User(db.Model):
     email = db.Column(db.String(150), nullable=False, unique=True)
     role = db.Column(db.String(50), nullable=False)
 
-    # Define relationship
+    # Defines a one-to-many relationship between the User model and the Trail
     trails = db.relationship(
         'Trail',
         backref='owner',
         cascade="all, delete, delete-orphan",
         single_parent=True,
-        lazy='joined'  # Eagerly load trails to avoid lazy-loading overhead
+        lazy='joined'
     )
+
 
 # Trail Model
 class Trail(db.Model):
@@ -38,7 +39,7 @@ class Trail(db.Model):
     elevation_gain = db.Column(db.Float, default=0.0)
     route_type = db.Column(db.String(50), default="Unknown")
     user_id = db.Column(db.Integer, db.ForeignKey("CW2.users.user_id"), nullable=False)
-    
+
     # Waypoints
     pt1_lat = db.Column(db.Float, nullable=True)
     pt1_long = db.Column(db.Float, nullable=True)
@@ -59,6 +60,7 @@ class Trail(db.Model):
         lazy=True
     )
 
+
 # Feature Model
 class Feature(db.Model):
     __tablename__ = "features"
@@ -74,6 +76,7 @@ class Feature(db.Model):
         lazy=True
     )
 
+
 # Link Table Model
 class TrailFeature(db.Model):
     __tablename__ = "trail_features"
@@ -86,6 +89,7 @@ class TrailFeature(db.Model):
     trail = db.relationship('Trail', back_populates='features')
     feature = db.relationship('Feature', back_populates='trails')
 
+
 # User Schema
 class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -93,8 +97,9 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_relationships = True
 
-    # Avoid circular references
+    # Serializes the trails relationship
     trails = fields.Nested("TrailSchema", exclude=("owner",), many=True)
+
 
 # Trail Schema
 class TrailSchema(ma.SQLAlchemyAutoSchema):
@@ -110,13 +115,11 @@ class TrailSchema(ma.SQLAlchemyAutoSchema):
             "pt2": {"lat": obj.pt2_lat, "long": obj.pt2_long, "desc": obj.pt2_desc},
             "pt3": {"lat": obj.pt3_lat, "long": obj.pt3_long, "desc": obj.pt3_desc},
         }
-
-    # Explicitly include user_id
+        
     user_id = Integer(required=True)
-
-    # Avoid circular references
     owner = fields.Nested("UserSchema", exclude=("trails",))
     features = fields.Nested("TrailFeatureSchema", many=True)
+
 
 # Feature Schema
 class FeatureSchema(ma.SQLAlchemyAutoSchema):
@@ -124,7 +127,8 @@ class FeatureSchema(ma.SQLAlchemyAutoSchema):
         model = Feature
         load_instance = True
 
-    trails = fields.Nested("TrailFeatureSchema", many=True)
+    trails = fields.Nested("TrailFeatureSchema", exclude=("feature",), many=True)
+
 
 # TrailFeature Schema
 class TrailFeatureSchema(ma.SQLAlchemyAutoSchema):
@@ -132,8 +136,9 @@ class TrailFeatureSchema(ma.SQLAlchemyAutoSchema):
         model = TrailFeature
         load_instance = True
 
-    trail = fields.Nested("TrailSchema", exclude=("features",))
     feature = fields.Nested("FeatureSchema", exclude=("trails",))
+    trail = fields.Nested("TrailSchema", exclude=("features", "owner", "waypoints"))
+
 
 # Create schema instances
 user_schema = UserSchema()

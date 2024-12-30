@@ -124,11 +124,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+
+
     post:
       tags:
         - Trails
       summary: "Create a new trail"
-      description: "Create a trail linked to a user and optionally add features to it."
+      description: >
+        Create a trail linked to the logged-in user. The payload supports adding waypoints and features at the time of creation.
       operationId: trails.create_trail
       requestBody:
         required: true
@@ -136,6 +140,31 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/TrailWithFeatures"
+            example:
+              trail_name: "Ocean View Trail"
+              trail_summary: "A beautiful trail with ocean views."
+              trail_description: "This trail is known for its scenic ocean views and gentle terrain."
+              difficulty: "Easy"
+              location: "Cornwall, UK"
+              length: 5.5
+              elevation_gain: 150
+              route_type: "Loop"
+              waypoints:
+                pt1:
+                  lat: 50.1234
+                  long: -5.6789
+                  desc: "Start of the trail"
+                pt2:
+                  lat: 50.124
+                  long: -5.6795
+                  desc: "Viewpoint overlooking the ocean"
+                pt3:
+                  lat: 50.125
+                  long: -5.68
+                  desc: "End of the loop"
+              features:
+                - feature_name: "Waterfall"
+                - feature_name: "ETC"
       responses:
         "201":
           description: "Trail created successfully"
@@ -155,7 +184,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-
   /trails/{trail_id}:
     get:
       tags:
@@ -231,8 +259,10 @@ paths:
     put:
       tags:
         - Trails
-      summary: "Update a trail by ID"
-      description: "Update an existing trail's details using its ID."
+      summary: Update a trail by ID
+      description: >
+        Update an existing trail's details, including waypoint updates and feature management. 
+        Use `features.add` to add features to the trail and `features.remove` to remove them.
       operationId: trails.update_trail
       parameters:
         - name: trail_id
@@ -242,27 +272,59 @@ paths:
             type: integer
             example: 1
       requestBody:
-        description: "Fields to update for the trail"
+        description: Fields to update for the trail
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Trail"
+              $ref: "#/components/schemas/UpdateTrail"
+            example:
+              trail_name: "Updated Name"
+              trail_summary: "An updated trail summary."
+              trail_description: "An updated trail description."
+              difficulty: "Updated"
+              location: "Updated, UK"
+              length: 50.0
+              elevation_gain: 200.0
+              route_type: "Updated"
+              waypoints:
+                pt1:
+                  lat: 50.1231
+                  long: -5.6718
+                  desc: "Updated Desc"
+                pt2:
+                  lat: 50.124
+                  long: -5.679
+                  desc: "Updated Desc"
+                pt3:
+                  lat: 50.125
+                  long: -5.680
+                  desc: "Updated Desc"
+              features:
+                add: ["Scenic update", "Historic Landmark"]
+                remove: ["Mountain Pass", "Large Waterfall"]
+
       responses:
         "200":
-          description: "Trail updated successfully"
+          description: Trail updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Trail"
+                $ref: "#/components/schemas/TrailWithFeatures"
+        "400":
+          description: Validation error or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
-          description: "Trail not found"
+          description: Trail not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
-          description: "Internal server error"
+          description: Internal server error
           content:
             application/json:
               schema:
@@ -325,8 +387,13 @@ paths:
               type: object
               properties:
                 feature_name:
-                  type: string
-                  example: "Waterfall"
+                  oneOf:
+                    - type: string
+                      example: "Scenic Waterfall"
+                    - type: array
+                      items:
+                        type: string
+                      example: ["Scenic Waterfall", "Viewpoint"]
       responses:
         "201":
           description: "Feature added successfully"
@@ -365,8 +432,13 @@ paths:
               type: object
               properties:
                 feature_name:
-                  type: string
-                  example: "Waterfall"
+                  oneOf:
+                    - type: string
+                      example: "Scenic Overlook"
+                    - type: array
+                      items:
+                        type: string
+                      example: ["Scenic Overlook", "Waterfall"]
       responses:
         "200":
           description: "Feature successfully removed from the trail."
@@ -397,7 +469,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
   #################### Feature Endpoints ####################
-
   /features:
     get:
       summary: Get All Features
@@ -685,24 +756,146 @@ components:
                 desc:
                   type: string
                   example: "End of the loop"
+    TrailWithFeatures:
+      type: object
+      properties:
+        trail_name:
+          type: string
+        trail_summary:
+          type: string
+        trail_description:
+          type: string
+        difficulty:
+          type: string
+        location:
+          type: string
+        length:
+          type: number
+          format: float
+        elevation_gain:
+          type: number
+          format: float
+        route_type:
+          type: string
+        waypoints:
+          type: object
+          properties:
+            pt1:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                long:
+                  type: number
+                  format: float
+                desc:
+                  type: string
+            pt2:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                long:
+                  type: number
+                  format: float
+                desc:
+                  type: string
+            pt3:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                long:
+                  type: number
+                  format: float
+                desc:
+                  type: string
+        features:
+          type: array
+          items:
+            type: object
+            properties:
+              feature_name:
+                type: string
+    UpdateTrail:
+      type: object
+      properties:
+        trail_name:
+          type: string
+          example: "Updated Trail Name"
+        difficulty:
+          type: string
+          example: "Moderate"
+        waypoints:
+          type: object
+          properties:
+            pt1:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                  example: 50.123
+                long:
+                  type: number
+                  format: float
+                  example: -5.678
+                desc:
+                  type: string
+                  example: "Updated Start Point"
+            pt2:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                  example: 50.124
+                long:
+                  type: number
+                  format: float
+                  example: -5.679
+                desc:
+                  type: string
+                  example: "Updated Mid Point"
+            pt3:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  format: float
+                  example: 50.125
+                long:
+                  type: number
+                  format: float
+                  example: -5.680
+                desc:
+                  type: string
+                  example: "Updated End Point"
+        features:
+          type: object
+          properties:
+            add:
+              type: array
+              items:
+                type: string
+              example: ["Scenic Waterfall", "Viewpoint"]
+            remove:
+              type: array
+              items:
+                type: string
+              example: ["Old Path", "Rocky Path"]
+
+
+                  
     Feature:
       type: object
       properties:
         feature_name:
           type: string
-          example: "Waterfall"
-          
-    TrailWithFeatures:
-      type: object
-      allOf:
-        - $ref: "#/components/schemas/Trail"
-        - type: object
-          properties:
-            features:
-              type: array
-              items:
-                $ref: "#/components/schemas/Feature"
-                
+          example: "Waterfall"            
     ErrorResponse:
       type: object
       properties:

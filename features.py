@@ -6,22 +6,18 @@ from models import Feature, TrailFeature, feature_schema, features_schema
 from permissions import check_permission
 
 
-#read all features
+# Read all features
 def read_all_features():
-    """
-    Fetch all features from the database and return them as a JSON response,
-    excluding trail relationships.
-    """
+
     # Check if the user has the required permission
     user, error = check_permission("view_all_features")
     if error:
         return jsonify({"error": error["error"]}), error["status_code"]
     
     try:
-        # Query all features
         features = Feature.query.all()
-
-        # Serialize only feature_id and feature_name
+        
+        # Serialize the data. Transforms the list of Feature objects into a JSON-serializable format.
         result = [{"feature_id": feature.feature_id, "feature_name": feature.feature_name} for feature in features]
 
         return jsonify(result), 200
@@ -29,12 +25,9 @@ def read_all_features():
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+# Search for a feature by its name and return all trails associated with it
 def search_feature_by_name():
-    """
-    Search for a feature by its name and return all trails associated with it,
-    including all feature names for each trail (without feature IDs).
-    """
-    # Check if the user has the required permission
+
     user, error = check_permission("search_features")
     if error:
         return jsonify({"error": error["error"]}), error["status_code"]
@@ -45,14 +38,12 @@ def search_feature_by_name():
         if not feature_name:
             return jsonify({"error": "Feature name is required."}), 400
 
-        # Query the feature by name
+        # Query the feature by name and check it exists
         feature = Feature.query.filter_by(feature_name=feature_name).first()
-
-        # Check if the feature exists
         if not feature:
             return jsonify({"error": f"Feature with name '{feature_name}' not found."}), 404
 
-        # Prepare the result
+        # Constructs the response
         result = {
             "feature_name": feature.feature_name,
             "trails": [
@@ -74,10 +65,10 @@ def search_feature_by_name():
                         {
                             "feature_name": linked_feature.feature_name
                         }
-                        for linked_feature in [f.feature for f in tf.trail.features]  # Access linked features
+                        for linked_feature in [f.feature for f in tf.trail.features]
                     ]
                 }
-                for tf in feature.trails  # Iterate over TrailFeature relationships
+                for tf in feature.trails
             ]
         }
 
@@ -86,16 +77,13 @@ def search_feature_by_name():
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
      
+# Add a new feature to the database.
 def add_feature():
-    """
-    Add a new feature to the database.
-    """
-    # Check if the user has the required permission
+
     user, error = check_permission("add_feature")
     if error:
         return jsonify({"error": error["error"]}), error["status_code"]
     try:
-        # Get feature data from the request
         feature_data = request.json
         feature_name = feature_data.get("feature_name")
 
@@ -119,16 +107,14 @@ def add_feature():
         db.session.rollback()
         return {"error": f"An error occurred: {str(e)}"}, 500
         
+        
+# Update the name of an existing feature
 def update_feature_by_name(current_feature_name):
-    """
-    Update the name of an existing feature by searching for the current feature name.
-    """
-    # Check if the user has the required permission
+
     user, error = check_permission("update_feature_by_name")
     if error:
         return jsonify({"error": error["error"]}), error["status_code"]
     try:
-        # Get the new feature name from the request body
         feature_data = request.json
         new_feature_name = feature_data.get("new_feature_name")
 
@@ -157,17 +143,14 @@ def update_feature_by_name(current_feature_name):
         db.session.rollback()
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+# Delete a feature from the database
 def delete_feature(feature_name):
-    """
-    Delete a feature from the database if it is not associated with any trail.
-    """
-    # Check if the user has the required permission
+
     user, error = check_permission("delete_feature")
     if error:
         return jsonify({"error": error["error"]}), error["status_code"]
     
     try:
-        # Fetch the feature by its name
         feature = Feature.query.filter_by(feature_name=feature_name).first()
 
         # Check if the feature exists
